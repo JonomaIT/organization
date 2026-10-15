@@ -2,5 +2,5 @@
 environment = "audit"
 
 repos = {
-  organization = null # repo ID once the repo exists: gh api repos/JonomaIT/organization -q .id
+  organization = "1421339071"
 }
