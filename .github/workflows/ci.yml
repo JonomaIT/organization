@@ -1,0 +1,43 @@
+name: CI
+
+# Checks that need no AWS access: formatting, validation and the bootstrap convention tests
+# (mocked provider) against every account's tfvars. bootstrap is applied by hand (see README).
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: fmt · validate · test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ vars.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive
+
+      - name: Bootstrap validate and test (every account)
+        working-directory: bootstrap
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
+          for f in env/*.tfvars; do
+            echo "::group::$f"
+            terraform test -var-file="$f"
+            echo "::endgroup::"
+          done

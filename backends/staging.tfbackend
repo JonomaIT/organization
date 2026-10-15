@@ -1,0 +1,4 @@
+# State backend of the staging account. The key comes from the naming convention
+# <environment>/<region|global|cross-region>/<component>, passed at init.
+bucket = "jonomait-staging-tfstate"
+region = "us-east-1"
