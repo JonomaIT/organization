@@ -41,10 +41,10 @@ run "write_trusts_only_this_accounts_environment" {
     condition = alltrue(flatten([
       for repo, d in data.aws_iam_policy_document.trust_plan : [
         for v in one([for c in one(d.statement).condition : c.values if c.variable == "token.actions.githubusercontent.com:sub"]) :
-        endswith(v, ":pull_request")
+        endswith(v, ":pull_request") || endswith(v, ":ref:refs/heads/main")
       ]
     ]))
-    error_message = "The plan role must only trust pull requests."
+    error_message = "The plan role must only trust pull requests and main."
   }
 }
 

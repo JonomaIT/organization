@@ -22,6 +22,9 @@ resource "aws_s3_bucket_versioning" "state" {
   }
 }
 
+# AWS managed KMS key: a customer managed key costs US$ 1/month per account. A certification
+# scenario uses a customer managed key (see Conformidade).
+#trivy:ignore:AVD-AWS-0132
 resource "aws_s3_bucket_server_side_encryption_configuration" "state" {
   bucket = aws_s3_bucket.state.id
 

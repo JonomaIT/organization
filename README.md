@@ -32,7 +32,7 @@ Applied **by hand, once per account**, by someone with administrative access the
 | GitHub OIDC provider | `token.actions.githubusercontent.com` |
 | State bucket (versioned, KMS, HTTPS only) | `jonomait-<account>-tfstate` |
 | Write role, per repo | `github-actions-<repo>`: `AdministratorAccess`, trusts only jobs in the GitHub Environment named after the account |
-| Plan role, per repo | `github-actions-<repo>-plan`: `ReadOnlyAccess` + the S3 lock files, trusts only pull requests |
+| Plan role, per repo | `github-actions-<repo>-plan`: `ReadOnlyAccess` + the S3 lock files, trusts pull requests and `main` (plan before approval, drift check) |
 | Image push (shared-services only) | `github-actions-ecr-push`: any org repo, `main` only |
 
 Which repos run in each account is the only thing a tfvars declares:
@@ -86,7 +86,7 @@ terraform init -backend=false
 for f in env/*.tfvars; do terraform test -var-file="$f"; done
 ```
 
-They check the role names, that the write role trusts only the account's GitHub Environment, that the plan role trusts only pull requests, the state bucket name and that `github-actions-ecr-push` exists only in shared-services. CI runs the same on every pull request.
+They check the role names, that the write role trusts only the account's GitHub Environment, that the plan role trusts only pull requests and main, the state bucket name and that `github-actions-ecr-push` exists only in shared-services. CI runs the same on every pull request.
 
 ### Next step: no manual runs
 

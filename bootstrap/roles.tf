@@ -1,7 +1,8 @@
 # Pipeline roles, one pair per repository in var.repos, named by convention so a workflow builds
 # the ARN on its own:
 #   github-actions-<repo>        write: jobs that declare this account's GitHub Environment
-#   github-actions-<repo>-plan   read-only: pull requests
+#   github-actions-<repo>-plan   read-only: pull requests and main (the plan shown before an
+#                                approval, and the nightly drift check)
 #
 # The write role has AdministratorAccess: a Terraform pipeline creates whatever the code declares,
 # and an allow list per service would need a bootstrap change for every new resource. What limits
@@ -87,7 +88,7 @@ data "aws_iam_policy_document" "trust_plan" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = [for s in local.subjects[each.key] : "${s}:pull_request"]
+      values   = flatten([for s in local.subjects[each.key] : ["${s}:pull_request", "${s}:ref:refs/heads/main"]])
     }
   }
 }
@@ -96,7 +97,7 @@ resource "aws_iam_role" "plan" {
   for_each = var.repos
 
   name                 = "github-actions-${each.key}-plan"
-  description          = "Terraform plan for ${var.github_org}/${each.key} pull requests (read-only)"
+  description          = "Terraform plan for ${var.github_org}/${each.key} pull requests and main (read-only)"
   assume_role_policy   = data.aws_iam_policy_document.trust_plan[each.key].json
   max_session_duration = 3600
 }
