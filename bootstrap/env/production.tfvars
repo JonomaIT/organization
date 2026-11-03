@@ -8,4 +8,5 @@ repos = {
   svc-sales-api    = "1427758242"
   svc-sales-worker = "1427758316"
   web-sales        = "1427788935"
+  web-dra-leticia  = "1443717068" # customer site (draleticiapenin.com.br)
 }
