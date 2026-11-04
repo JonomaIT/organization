@@ -13,15 +13,17 @@ JonomaIT AWS organization governance in Terraform: everything the organization n
 
 ```
 organization/
-├── backends/<account>.tfbackend   state bucket of each account
 ├── bootstrap/
 │   ├── *.tf
+│   ├── platform.auto.tfvars       the platform's identity: prefix, region, GitHub org (every account)
 │   ├── env/<account>.tfvars       which repos run Terraform in the account
 │   └── tests/
 └── .github/workflows/ci.yml       fmt, validate, tests (no AWS access)
 ```
 
-State key convention: `<account>/<region|global|cross-region>/<component>`; bootstrap is `<account>/global/bootstrap`, in the account's own bucket.
+State key convention: `<account>/<region|global|cross-region>/<component>`; bootstrap is `<account>/global/bootstrap`, in the account's own bucket, `<prefix>-<account>-tfstate`. The pipelines derive the same bucket from the `PROJECT_PREFIX` and `STATE_REGION` org variables: no backend files.
+
+**Another platform** (another name, another GitHub organization): change `bootstrap/platform.auto.tfvars` and set the org variables `PROJECT_PREFIX` and `STATE_REGION` to the same `prefix` and `region`. Nothing else in the code names the platform.
 
 ## Bootstrap
 
@@ -30,7 +32,7 @@ Applied **by hand, once per account**, by someone with administrative access the
 | Resource | Name |
 |---|---|
 | GitHub OIDC provider | `token.actions.githubusercontent.com` |
-| State bucket (versioned, KMS, HTTPS only) | `jonomait-<account>-tfstate` |
+| State bucket (versioned, KMS, HTTPS only) | `<prefix>-<account>-tfstate` (e.g. `jonomait-staging-tfstate`) |
 | Write role, per repo | `github-actions-<repo>`: `AdministratorAccess`, trusts only jobs in the GitHub Environment named after the account |
 | Plan role, per repo | `github-actions-<repo>-plan`: `ReadOnlyAccess` + the S3 lock files, trusts pull requests and `main` (plan before approval, drift check) |
 | Image push (shared-services only) | `github-actions-ecr-push`: any org repo, `main` only |
@@ -59,7 +61,7 @@ terraform init
 terraform apply -var-file=env/staging.tfvars           # the tfvars decides WHAT
 mv backend.tf.off backend.tf                           # 2. move the state into the new bucket
 terraform init -migrate-state \
-  -backend-config=../backends/staging.tfbackend \
+  -backend-config=bucket=jonomait-staging-tfstate -backend-config=region=us-east-1 \
   -backend-config=key=staging/global/bootstrap
 rm -f terraform.tfstate*                               # 3. the state now lives in S3
 ```
@@ -69,9 +71,9 @@ rm -f terraform.tfstate*                               # 3. the state now lives 
 ```bash
 export AWS_PROFILE=jonomait-staging
 terraform init -reconfigure \
-  -backend-config=../backends/staging.tfbackend \
+  -backend-config=bucket=jonomait-staging-tfstate -backend-config=region=us-east-1 \
   -backend-config=key=staging/global/bootstrap
-terraform plan -var-file=env/staging.tfvars
+terraform plan -var-file=env/staging.tfvars            # platform.auto.tfvars is loaded by itself
 ```
 
 `-reconfigure` is required when switching accounts in the same directory: without it, `plan` uses the previous account's state.
