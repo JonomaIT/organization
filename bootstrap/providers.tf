@@ -5,11 +5,11 @@ provider "aws" {
   # No commit tag: it would change on every apply and show every resource as modified.
   default_tags {
     tags = {
-      "jonomait:env"        = var.environment
-      "jonomait:app"        = "plataforma"
-      "jonomait:repo"       = "organization"
-      "jonomait:component"  = "bootstrap"
-      "jonomait:managed-by" = "terraform"
+      "${var.prefix}:env"        = var.environment
+      "${var.prefix}:app"        = "plataforma"
+      "${var.prefix}:repo"       = "organization"
+      "${var.prefix}:component"  = "bootstrap"
+      "${var.prefix}:managed-by" = "terraform"
     }
   }
 }

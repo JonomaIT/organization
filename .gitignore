@@ -19,6 +19,8 @@ crash.*.log
 # Per-account tfvars are the versioned configuration (no secrets):
 # global components env/<account>.tfvars, regional ones env/<account>/<region>.tfvars (ADR-008).
 !**/env/**/*.tfvars
+# The platform's identity (no secrets): bootstrap/platform.auto.tfvars.
+!bootstrap/platform.auto.tfvars
 
 # Ignore override files as they are usually used to override resources locally and so
 # are not checked in

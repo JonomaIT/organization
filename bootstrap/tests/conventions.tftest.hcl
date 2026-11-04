@@ -52,8 +52,8 @@ run "state_bucket_and_ecr_push" {
   command = plan
 
   assert {
-    condition     = aws_s3_bucket.state.bucket == "jonomait-${var.environment}-tfstate"
-    error_message = "The state bucket must be jonomait-<account>-tfstate."
+    condition     = aws_s3_bucket.state.bucket == "${var.prefix}-${var.environment}-tfstate"
+    error_message = "The state bucket must be <prefix>-<account>-tfstate."
   }
 
   assert {
