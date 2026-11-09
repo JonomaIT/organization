@@ -9,4 +9,6 @@ repos = {
   svc-sales-worker = "1427758316"
   web-sales        = "1427788935"
   web-dra-leticia  = "1443717068" # customer site (draleticiapenin.com.br)
+  web-joshuel      = "1451393053" # personal site (joshuel.com.br)
+  web-english      = "1451393170" # English study site (english.joshuel.com.br)
 }
