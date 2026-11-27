@@ -37,7 +37,7 @@ concurrency:
 
 jobs:
   deploy:
-    uses: JonomaIT/pipelines/.github/workflows/terraform-deploy.yml@v2.10.0
+    uses: JonomaIT/pipelines/.github/workflows/terraform-deploy.yml@v2.11.0
     with:
       order: global/github
       # Repo settings are never destroyed by a "destroy everything" run.
