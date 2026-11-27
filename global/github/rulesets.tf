@@ -8,8 +8,18 @@ resource "github_repository_ruleset" "main" {
   target      = "branch"
   enforcement = "active"
 
-  # Dependabot patch and minor updates merge themselves (pipelines dependabot-auto-merge). Where
-  # main needs a review, only the jonomait-dependabot app may skip it, and only through a PR.
+  # Where main needs a review, two actors may skip it, and only through a PR (never a direct push):
+  #   org admins            the org has a single maintainer, who cannot approve their own PR
+  #   jonomait-dependabot   Dependabot patch and minor updates (pipelines dependabot-auto-merge)
+  dynamic "bypass_actors" {
+    for_each = each.value.approvals > 0 ? [1] : []
+    content {
+      actor_id    = 1 # the fixed id GitHub uses for the OrganizationAdmin role
+      actor_type  = "OrganizationAdmin"
+      bypass_mode = "pull_request"
+    }
+  }
+
   dynamic "bypass_actors" {
     for_each = var.dependabot_app_id != null && each.value.approvals > 0 ? [var.dependabot_app_id] : []
     content {
