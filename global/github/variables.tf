@@ -9,6 +9,18 @@ variable "allowed_action_patterns" {
   default     = []
 }
 
+variable "dependabot_app_id" {
+  type        = number
+  description = <<-EOT
+    App ID of the jonomait-dependabot GitHub App (Settings → Developer settings → GitHub Apps →
+    App ID; not the Client ID). On repos whose main needs approvals, it may merge a PR without the
+    review: the pipelines dependabot-auto-merge workflow uses it only for patch and minor Dependabot
+    updates, after the required checks passed. Its key lives only in Dependabot secrets, so no other
+    workflow can use the bypass. null = no bypass.
+  EOT
+  default     = null
+}
+
 variable "repositories" {
   description = <<-EOT
     Every repo of the org, by name. The standard (squash only, branch deleted on merge, auto-merge,

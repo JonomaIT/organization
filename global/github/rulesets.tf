@@ -8,6 +8,17 @@ resource "github_repository_ruleset" "main" {
   target      = "branch"
   enforcement = "active"
 
+  # Dependabot patch and minor updates merge themselves (pipelines dependabot-auto-merge). Where
+  # main needs a review, only the jonomait-dependabot app may skip it, and only through a PR.
+  dynamic "bypass_actors" {
+    for_each = var.dependabot_app_id != null && each.value.approvals > 0 ? [var.dependabot_app_id] : []
+    content {
+      actor_id    = bypass_actors.value
+      actor_type  = "Integration"
+      bypass_mode = "pull_request"
+    }
+  }
+
   conditions {
     ref_name {
       include = ["~DEFAULT_BRANCH"]
