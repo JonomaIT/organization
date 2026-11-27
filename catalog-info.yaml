@@ -1,0 +1,15 @@
+# Software catalog entry (Backstage format). It is the source of truth for what this repo is,
+# who owns it and how it runs; a portal or a script can read every repo's file.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: organization
+  description: "AWS organization governance in Terraform: per-account bootstrap (GitHub OIDC, state bucket, pipeline roles) beyond what Control Tower does."
+  annotations:
+    github.com/project-slug: JonomaIT/organization
+  tags: [terraform,aws,governance]
+spec:
+  type: terraform
+  lifecycle: production
+  owner: group:jonomait/gh-infra
+  system: platform
