@@ -1,4 +1,4 @@
-# The org standard, checked on the real catalog (github.auto.tfvars) with a mocked GitHub: no token,
+# The org standard, checked on the real catalog (env/management.tfvars) with a mocked GitHub: no token,
 # no network. Every repo must come out squash-only, cleaned up on merge, scanned and protected.
 mock_provider "github" {}
 

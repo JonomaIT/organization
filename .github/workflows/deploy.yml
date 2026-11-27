@@ -1,0 +1,50 @@
+name: Deploy
+
+# Logic lives in JonomaIT/pipelines: this file only says when to run it and the apply order.
+#   pull request → plan of what changed (read-only app and role) + PR comment; "Plan result"
+#   main         → plan, ONE approval in the management environment, apply of that plan
+#   manual       → the same for a component or everything; the only way to create a component
+#                  (the first apply of global/github is a manual run)
+#   every night  → drift check: a setting changed by hand in the GitHub UI opens an issue
+# bootstrap/ is not here: it creates the roles this pipeline uses, so it stays applied by hand.
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 10 * * *" # 07:00 in Brasília
+  workflow_dispatch:
+    inputs:
+      target:
+        type: string
+        required: false
+        default: ""
+        description: Component (e.g. global/github) or tfvars; empty = everything
+
+permissions:
+  contents: read
+  id-token: write      # OIDC with AWS
+  pull-requests: write # plan comment
+  issues: write        # drift issue
+
+# Never two runs touching the same states; an apply is never interrupted halfway.
+concurrency:
+  group: terraform-${{ github.repository }}-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    uses: JonomaIT/pipelines/.github/workflows/terraform-deploy.yml@v2.10.0
+    with:
+      order: global/github
+      # Repo settings are never destroyed by a "destroy everything" run.
+      persistent: global/github
+      target: ${{ inputs.target || '' }}
+      drift: ${{ github.event_name == 'schedule' }}
+      github-app: true
+    # The two GitHub Apps' keys: the read-only one at repo level, the write one only in the
+    # management environment (the apply job runs there).
+    secrets: inherit
