@@ -5,6 +5,7 @@ JonomaIT AWS organization governance in Terraform: everything the organization n
 | Folder | What | Status |
 |---|---|---|
 | `bootstrap/` | Per account: GitHub OIDC provider, state bucket, pipeline roles | ready |
+| `github/` | The GitHub org standard as code: Actions policy, every repo's settings, security and rulesets | ready |
 | `org/` | SCPs, RCPs, extra OUs, permission sets, delegation of the security services | later |
 
 **Separation of duties:** the `infrastructure` repo assumes the pipeline roles, but the code of those roles lives here. Whoever uses an access does not control it.
@@ -24,6 +25,39 @@ organization/
 State key convention: `<account>/<region|global|cross-region>/<component>`; bootstrap is `<account>/global/bootstrap`, in the account's own bucket, `<prefix>-<account>-tfstate`. The pipelines derive the same bucket from the `PROJECT_PREFIX` and `STATE_REGION` org variables: no backend files.
 
 **Another platform** (another name, another GitHub organization): change `bootstrap/platform.auto.tfvars` and set the org variables `PROJECT_PREFIX` and `STATE_REGION` to the same `prefix` and `region`. Nothing else in the code names the platform.
+
+## GitHub settings (`github/`)
+
+One standard for every repo, so no setting depends on someone remembering to click it. `github.auto.tfvars` lists the repos and only what differs between them (kind, required checks, reviews, release tags); the rest is the same for all:
+
+| Area | Standard |
+|---|---|
+| Merging | squash only, title = PR title (Conventional Commits feed the releases), auto-merge allowed, "update branch" button |
+| Branches | head branch deleted on merge; `main` ruleset: no push, no delete, no force-push, PR with the repo's required checks passing on the latest `main`, threads resolved |
+| Release tags | `v*` and `<module>/v*` cannot be moved or deleted (libraries) |
+| Security | secret scanning + push protection, Dependabot alerts and security updates |
+| Clutter | no wiki, no projects, no discussions: docs live in the repo, the backlog in issues |
+| Topics | `layer-<kind>` plus the repo's own, so the org page filters by layer |
+| Actions (org) | only GitHub's actions, verified creators and the listed patterns; `GITHUB_TOKEN` read-only by default |
+
+Removing a repo from the list **archives** it (never deletes it), and `prevent_destroy` stops even that unless the line is removed on purpose. `imports.tf` adopts the repos and rulesets that already exist; delete it after the first apply.
+
+Applied by hand by an org owner, like the bootstrap (the state lives in the management account):
+
+```bash
+gh auth refresh -s admin:org                            # the token needs org admin
+export GITHUB_TOKEN=$(gh auth token)
+export AWS_PROFILE=jonomait-management
+
+cd github
+terraform init -reconfigure \
+  -backend-config=bucket=jonomait-management-tfstate -backend-config=region=us-east-1 \
+  -backend-config=key=management/global/github
+terraform plan                                           # read it: imports, then only setting changes
+terraform apply
+```
+
+A new repo: create it on GitHub, add its entry to `github.auto.tfvars`, apply.
 
 ## Bootstrap
 
