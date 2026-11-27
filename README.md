@@ -42,22 +42,37 @@ One standard for every repo, so no setting depends on someone remembering to cli
 
 Removing a repo from the list **archives** it (never deletes it), and `prevent_destroy` stops even that unless the line is removed on purpose. `imports.tf` adopts the repos and rulesets that already exist; delete it after the first apply.
 
-Applied by hand by an org owner, like the bootstrap (the state lives in the management account):
+Applied by the **GitHub settings** pipeline (`.github/workflows/github-settings.yml`), like `infrastructure`'s Deploy:
+
+| When | What |
+|---|---|
+| pull request touching `github/` | plan with a read-only app, in the run summary |
+| merge to `main`, or Actions → GitHub settings → Run workflow | plan, **one approval** in the `management` environment, apply of exactly that plan |
+| every night | drift check: a setting changed by hand in the UI fails the run |
+
+Credentials, split like the bootstrap's plan and write roles:
+
+| App | Permissions (repository and organization) | Stored as |
+|---|---|---|
+| `jonomait-settings-plan` | Administration: read | repo variable `SETTINGS_PLAN_APP_CLIENT_ID`, repo secret `SETTINGS_PLAN_APP_PRIVATE_KEY` |
+| `jonomait-settings` | Administration: read and write | variable `SETTINGS_APP_CLIENT_ID` and secret `SETTINGS_APP_PRIVATE_KEY` **in the `management` environment only** |
+
+Both apps are installed on all repositories of the org. The state lives in the management account (`github-actions-organization[-plan]` roles from `bootstrap/`, org variables `AWS_ACCOUNT_IDS`, `PROJECT_PREFIX`, `STATE_REGION`).
+
+By hand, only if the pipeline is unavailable (an org owner's token):
 
 ```bash
-gh auth refresh -s admin:org                            # the token needs org admin
+gh auth refresh -s admin:org
 export GITHUB_TOKEN=$(gh auth token)
 export AWS_PROFILE=jonomait-management
-
 cd github
 terraform init -reconfigure \
   -backend-config=bucket=jonomait-management-tfstate -backend-config=region=us-east-1 \
   -backend-config=key=management/global/github
-terraform plan                                           # read it: imports, then only setting changes
-terraform apply
+terraform plan
 ```
 
-A new repo: create it on GitHub, add its entry to `github.auto.tfvars`, apply.
+A new repo: create it on GitHub, add its entry to `github.auto.tfvars`, open a PR.
 
 ## Bootstrap
 
