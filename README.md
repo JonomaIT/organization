@@ -5,6 +5,7 @@ JonomaIT AWS organization governance in Terraform: everything the organization n
 | Folder | What | Status |
 |---|---|---|
 | `bootstrap/` | Per account: GitHub OIDC provider, state bucket, pipeline roles | ready |
+| `global/github/` | The GitHub org standard as code: Actions policy, every repo's settings, security and rulesets | ready |
 | `org/` | SCPs, RCPs, extra OUs, permission sets, delegation of the security services | later |
 
 **Separation of duties:** the `infrastructure` repo assumes the pipeline roles, but the code of those roles lives here. Whoever uses an access does not control it.
@@ -18,12 +19,67 @@ organization/
 │   ├── platform.auto.tfvars       the platform's identity: prefix, region, GitHub org (every account)
 │   ├── env/<account>.tfvars       which repos run Terraform in the account
 │   └── tests/
-└── .github/workflows/ci.yml       fmt, validate, tests (no AWS access)
+├── global/github/
+│   ├── *.tf                       the standard every repo gets
+│   ├── env/management.tfvars      the catalog: each repo and what differs in it
+│   └── tests/
+└── .github/workflows/
+    ├── ci.yml                     fmt, validate, tests (no AWS access)
+    └── deploy.yml                 global/github: plan, approval, apply, nightly drift
 ```
 
 State key convention: `<account>/<region|global|cross-region>/<component>`; bootstrap is `<account>/global/bootstrap`, in the account's own bucket, `<prefix>-<account>-tfstate`. The pipelines derive the same bucket from the `PROJECT_PREFIX` and `STATE_REGION` org variables: no backend files.
 
 **Another platform** (another name, another GitHub organization): change `bootstrap/platform.auto.tfvars` and set the org variables `PROJECT_PREFIX` and `STATE_REGION` to the same `prefix` and `region`. Nothing else in the code names the platform.
+
+## GitHub settings (`global/github/`)
+
+One standard for every repo, so no setting depends on someone remembering to click it. `env/management.tfvars` lists the repos and only what differs between them (kind, required checks, reviews, release tags); the rest is the same for all:
+
+| Area | Standard |
+|---|---|
+| Merging | squash only, title = PR title (Conventional Commits feed the releases), auto-merge allowed, "update branch" button |
+| Branches | head branch deleted on merge; `main` ruleset: no push, no delete, no force-push, PR with the repo's required checks passing on the latest `main`, threads resolved |
+| Release tags | `v*` and `<module>/v*` cannot be moved or deleted (libraries) |
+| Security | secret scanning + push protection, Dependabot alerts and security updates |
+| Clutter | no wiki, no projects, no discussions: docs live in the repo, the backlog in issues |
+| Topics | `layer-<kind>` plus the repo's own, so the org page filters by layer |
+| Actions (org) | only GitHub's actions, verified creators and the listed patterns; `GITHUB_TOKEN` read-only by default |
+
+Removing a repo from the list **archives** it (never deletes it), and `prevent_destroy` stops even that unless the line is removed on purpose. A repo that already exists is adopted with an `import` block in the same PR that adds it (removed after its apply).
+
+Applied by the **Deploy** pipeline (`.github/workflows/deploy.yml`), the same `terraform-deploy` of `pipelines` that `infrastructure` uses, with `github-app: true`:
+
+| When | What |
+|---|---|
+| pull request touching `global/github/` | plan with the read-only app, as a PR comment; `Plan result` check |
+| merge to `main` | plan, **one approval** in the `management` environment, apply of exactly that plan |
+| manual (Actions → Deploy → Run workflow) | the same; **the first apply must be manual** (a push never creates a component) |
+| every night | drift check: a setting changed by hand in the UI opens the "Terraform drift detected" issue |
+
+Credentials, split like the bootstrap's plan and write roles:
+
+| App | Permissions (repository and organization) | Stored as |
+|---|---|---|
+| `jonomait-settings-plan` | Administration: read | repo variable `SETTINGS_PLAN_APP_CLIENT_ID`, repo secret `SETTINGS_PLAN_APP_PRIVATE_KEY` |
+| `jonomait-settings` | Administration: read and write | variable `SETTINGS_APP_CLIENT_ID` and secret `SETTINGS_APP_PRIVATE_KEY` **in the `management` environment only** |
+
+Both apps are installed on all repositories of the org. The state lives in the management account (`github-actions-organization[-plan]` roles from `bootstrap/`; `AWS_ACCOUNT_IDS` must list `management`).
+
+By hand, only if the pipeline is unavailable (an org owner's token):
+
+```bash
+gh auth refresh -s admin:org
+export GITHUB_TOKEN=$(gh auth token)
+export AWS_PROFILE=jonomait-management
+cd global/github
+terraform init -reconfigure \
+  -backend-config=bucket=jonomait-management-tfstate -backend-config=region=us-east-1 \
+  -backend-config=key=management/global/github
+terraform plan -var-file=env/management.tfvars
+```
+
+A new repo: create it on GitHub, add its entry to `global/github/env/management.tfvars`, open a PR.
 
 ## Bootstrap
 
