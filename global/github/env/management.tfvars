@@ -8,8 +8,8 @@ allowed_action_patterns = [
 ]
 
 # jonomait-dependabot app (App ID, not secret): may merge Dependabot patch/minor PRs without the
-# review on repos that need approvals. null until the app exists.
-dependabot_app_id = null
+# review on repos that need approvals.
+dependabot_app_id = 5958542
 
 repositories = {
   organization = {
