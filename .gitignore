@@ -21,8 +21,6 @@ crash.*.log
 !**/env/**/*.tfvars
 # The platform's identity (no secrets): bootstrap/platform.auto.tfvars.
 !bootstrap/platform.auto.tfvars
-# The org's repo catalog (no secrets): github/github.auto.tfvars.
-!github/github.auto.tfvars
 
 # Ignore override files as they are usually used to override resources locally and so
 # are not checked in

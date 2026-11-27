@@ -1,5 +1,6 @@
 # The org's repos and what makes each one different; everything else is the standard
-# (repositories.tf, rulesets.tf). A new repo is one entry here, applied before its first PR.
+# (repositories.tf, rulesets.tf). A new repo is one entry here, applied by the Deploy pipeline.
+# The file is named after the account that keeps the state (management), as every global component.
 github_org = "JonomaIT"
 
 allowed_action_patterns = [
