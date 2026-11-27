@@ -2,7 +2,7 @@
 # no network. Every repo must come out squash-only, cleaned up on merge, scanned and protected.
 mock_provider "github" {}
 
-# imports.tf adopts existing resources, which a mocked provider cannot read: these stand in.
+# Resources adopted with import blocks cannot be read by a mocked provider: these stand in.
 override_resource {
   target = github_repository.repo
 }

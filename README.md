@@ -46,7 +46,7 @@ One standard for every repo, so no setting depends on someone remembering to cli
 | Topics | `layer-<kind>` plus the repo's own, so the org page filters by layer |
 | Actions (org) | only GitHub's actions, verified creators and the listed patterns; `GITHUB_TOKEN` read-only by default |
 
-Removing a repo from the list **archives** it (never deletes it), and `prevent_destroy` stops even that unless the line is removed on purpose. `imports.tf` adopts the repos and rulesets that already exist; delete it after the first apply.
+Removing a repo from the list **archives** it (never deletes it), and `prevent_destroy` stops even that unless the line is removed on purpose. A repo that already exists is adopted with an `import` block in the same PR that adds it (removed after its apply).
 
 Applied by the **Deploy** pipeline (`.github/workflows/deploy.yml`), the same `terraform-deploy` of `pipelines` that `infrastructure` uses, with `github-app: true`:
 
