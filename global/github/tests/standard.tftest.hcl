@@ -88,3 +88,25 @@ run "an_unknown_kind_is_refused" {
 
   expect_failures = [var.repositories]
 }
+
+run "dependabot_bypass_only_where_main_needs_a_review" {
+  command = plan
+
+  variables {
+    dependabot_app_id = 123456
+  }
+
+  assert {
+    condition = alltrue([for name, r in github_repository_ruleset.main :
+      length(r.bypass_actors) == (var.repositories[name].approvals > 0 ? 1 : 0)
+    ])
+    error_message = "Only repos whose main needs approvals may let the Dependabot app skip the review."
+  }
+
+  assert {
+    condition = alltrue(flatten([for r in github_repository_ruleset.main : [for b in r.bypass_actors :
+      b.actor_type == "Integration" && b.bypass_mode == "pull_request" && b.actor_id == 123456
+    ]]))
+    error_message = "The bypass must be the Dependabot app, through a pull request only."
+  }
+}

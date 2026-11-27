@@ -7,6 +7,10 @@ allowed_action_patterns = [
   "googleapis/release-please-action@*",
 ]
 
+# jonomait-dependabot app (App ID, not secret): may merge Dependabot patch/minor PRs without the
+# review on repos that need approvals. null until the app exists.
+dependabot_app_id = null
+
 repositories = {
   organization = {
     description = "JonomaIT AWS organization governance: per-account bootstrap (GitHub OIDC, state bucket, pipeline roles)"
