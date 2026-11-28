@@ -48,6 +48,7 @@ repositories = {
     code_owner_review = true
   }
   "svc-sales-api" = {
+    archived          = true # lab, retired 2026-11-28
     description       = "Sales API: stores sales and publishes them for processing, active in two regions (JonomaIT lab)"
     kind              = "app"
     topics            = ["ecs", "python", "reference"]
@@ -56,6 +57,7 @@ repositories = {
     code_owner_review = true
   }
   "svc-sales-worker" = {
+    archived          = true # lab, retired 2026-11-28
     description       = "Sales processor: consumes every region's sales, only in the ACTIVE region, idempotent (JonomaIT lab)"
     kind              = "app"
     topics            = ["ecs", "python", "reference"]
@@ -64,6 +66,7 @@ repositories = {
     code_owner_review = true
   }
   "web-sales" = {
+    archived          = true # lab, retired 2026-11-28
     description       = "Sales simulator: create sales and watch them processed across two regions (JonomaIT lab, CloudFront)"
     kind              = "app"
     homepage          = "https://vendas.joshuel.com.br"

@@ -48,8 +48,15 @@ run "every_repo_follows_the_standard" {
   }
 
   assert {
-    condition     = length(github_repository_ruleset.main) == length(var.repositories)
-    error_message = "Every repo must have a main ruleset."
+    condition     = length(github_repository_ruleset.main) == length([for r in var.repositories : r if !r.archived])
+    error_message = "Every active repo must have a main ruleset."
+  }
+
+  assert {
+    condition = alltrue([for name, r in var.repositories :
+      github_repository.repo[name].archived == r.archived && (r.archived == !contains(keys(github_repository_ruleset.main), name))
+    ])
+    error_message = "Archived repos must be archived on GitHub and have no main ruleset; active ones keep theirs."
   }
 
   assert {
