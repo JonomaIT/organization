@@ -31,6 +31,7 @@ variable "repositories" {
       approvals          required approving reviews on main (0 while one person runs the org)
       code_owner_review  require a CODEOWNERS review on main
       release_tags       protect release tags (v*, <module>/v*) from deletion and moves
+      archived           retired repo: read-only, kept for history; its rulesets and alerts are removed
   EOT
   type = map(object({
     description       = string
@@ -42,6 +43,7 @@ variable "repositories" {
     approvals         = optional(number, 0)
     code_owner_review = optional(bool, false)
     release_tags      = optional(bool, false)
+    archived          = optional(bool, false)
   }))
 
   validation {
@@ -50,7 +52,7 @@ variable "repositories" {
   }
 
   validation {
-    condition     = alltrue([for r in values(var.repositories) : length(r.checks) > 0])
+    condition     = alltrue([for r in values(var.repositories) : r.archived || length(r.checks) > 0])
     error_message = "Every repo needs at least one required check on main: a main nobody verifies is not protected."
   }
 }

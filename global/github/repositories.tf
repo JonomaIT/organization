@@ -8,6 +8,7 @@ resource "github_repository" "repo" {
   homepage_url = each.value.homepage
   visibility   = "public"
   is_template  = each.value.is_template
+  archived     = each.value.archived
   topics       = sort(distinct(concat(["layer-${each.value.kind}"], each.value.topics)))
 
   # Squash only: one commit per PR on main, titled by the PR (Conventional Commits feed the
@@ -43,15 +44,20 @@ resource "github_repository" "repo" {
   }
 }
 
+# Archived repos are read-only, so only active ones get the settings below and the rulesets.
+locals {
+  active_repositories = { for name, r in var.repositories : name => r if !r.archived }
+}
+
 resource "github_repository_vulnerability_alerts" "repo" {
-  for_each = var.repositories
+  for_each = local.active_repositories
 
   repository = github_repository.repo[each.key].name
   enabled    = true
 }
 
 resource "github_repository_dependabot_security_updates" "repo" {
-  for_each = var.repositories
+  for_each = local.active_repositories
 
   repository = github_repository.repo[each.key].name
   enabled    = true

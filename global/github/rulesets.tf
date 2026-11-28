@@ -1,7 +1,7 @@
 # main: nobody pushes to it directly, deletes it or rewrites it; everything lands through a PR whose
 # required checks passed on the latest main (strict), squashed.
 resource "github_repository_ruleset" "main" {
-  for_each = var.repositories
+  for_each = local.active_repositories
 
   name        = "main"
   repository  = github_repository.repo[each.key].name
@@ -64,7 +64,7 @@ resource "github_repository_ruleset" "main" {
 # Release tags are immutable: a published version never moves and never disappears, so a ref pinned
 # by a consumer always means the same code. v* for repo-wide tags, */v* for one version per module.
 resource "github_repository_ruleset" "release_tags" {
-  for_each = { for name, r in var.repositories : name => r if r.release_tags }
+  for_each = { for name, r in local.active_repositories : name => r if r.release_tags }
 
   name        = "version tags"
   repository  = github_repository.repo[each.key].name
